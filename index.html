@@ -1,1 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Nexora 3D Supermarket</title>
 
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:Arial}
+canvas{display:block}
+
+#ui{
+ position:fixed;top:12px;left:12px;right:12px;
+ display:flex;gap:8px;justify-content:space-between;
+ z-index:10;pointer-events:none
+}
+.stat{
+ background:#111c;color:white;padding:10px 13px;
+ border-radius:12px;font-weight:bold;
+ border:1px solid #ffffff25
+}
+
+#hint{
+ position:fixed;left:50%;bottom:20px;transform:translateX(-50%);
+ background:#111d;color:white;padding:10px 15px;
+ border-radius:12px;font-size:13px;z-index:10;
+ text-align:center
+}
+
+#joy{
+ position:fixed;bottom:25px;left:25px;
+ width:125px;height:125px;border-radius:50%;
+ background:#ffffff20;border:2px solid #ffffff45;
+ z-index:20;display:none
+}
+#knob{
+ position:absolute;width:48px;height:48px;
+ border-radius:50%;background:#ffffffaa;
+ left:36px;top:36px
+}
+
+#buy{
+ position:fixed;right:25px;bottom:38px;
+ width:78px;height:78px;border-radius:50%;
+ border:3px solid #fff8;background:#6d45e8;
+ color:#fff;font-weight:bold;z-index:20;display:none
+}
+
+@media(max-width:700px){
+ #joy,#buy{display:block}
+ #hint{bottom:160px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+ <div class="stat">💰 ₹<span id="money">500</span></div>
+ <div class="stat">🛒 <span id="customers">0</span></div>
+ <div class="stat">🏪 Lv.<span id="level">1</span></div>
+</div>
+
+<div id="hint">
+ WASD / Arrow Keys se move karo<br>
+ Shelf ke paas jao aur BUY dabao
+</div>
+
+<div id="joy"><div id="knob"></div></div>
+<button id="buy">BUY</button>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =========================
+   THREE.JS SETUP
+========================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x9bc9ed);
+
+scene.fog = new THREE.Fog(0x9bc9ed,35,100);
+
+const camera = new THREE.PerspectiveCamera(
+ 65,
+ innerWidth/innerHeight,
+ .1,
+ 200
+);
+
+const renderer = new THREE.WebGLRenderer({
+ antialias:true
+});
+
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+
+document.body.appendChild(renderer.domElement);
+
+
+/* =========================
+   LIGHT
+========================= */
+
+const hemi = new THREE.HemisphereLight(
+ 0xffffff,
+ 0x667788,
+ 2
+);
+
+scene.add(hemi);
+
+const light = new THREE.DirectionalLight(
+ 0xffffff,
+ 2.5
+);
+
+light.position.set(10,20,10);
+light.castShadow=true;
+
+light.shadow.mapSize.width=2048;
+light.shadow.mapSize.height=2048;
+
+scene.add(light);
+
+
+/* =========================
+   GAME DATA
+========================= */
+
+let money=500;
+let level=1;
+let customerCount=0;
+let sold=0;
+
+const player={
+ x:0,
+ z:12,
+ speed:.11
+};
+
+const keys={};
+
+window.addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=true;
+});
+
+window.addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+});
+
+
+/* =========================
+   MATERIALS
+========================= */
+
+const floorMat=new THREE.MeshStandardMaterial({
+ color:0xd8d2c5
+});
+
+const wallMat=new THREE.MeshStandardMaterial({
+ color:0x343b4b
+});
+
+const woodMat=new THREE.MeshStandardMaterial({
+ color:0x784925
+});
+
+const metalMat=new THREE.MeshStandardMaterial({
+ color:0x555d68,
+ metalness:.6,
+ roughness:.3
+});
+
+
+/* =========================
+   HELPER
+========================= */
+
+function box(
+ x,y,z,
+ w,h,d,
+ material,
+ parent=scene
+){
+
+ const geo=new THREE.BoxGeometry(w,h,d);
+
+ const mesh=new THREE.Mesh(geo,material);
+
+ mesh.position.set(x,y,z);
+
+ mesh.castShadow=true;
+ mesh.receiveShadow=true;
+
+ parent.add(mesh);
+
+ return mesh;
+}
+
+
+/* =========================
+   FLOOR
+========================= */
+
+box(
+ 0,-.15,0,
+ 55,.3,42,
+ floorMat
+);
+
+
+/* =========================
+   SUPERMARKET WALLS
+========================= */
+
+box(0,3,-21,55,6,.5,wallMat);
+box(-27.25,3,0,.5,6,42,wallMat);
+box(27.25,3,0,.5,42,6,wallMat);
+
+
+/* back wall sign */
+const signMat=new THREE.MeshStandardMaterial({
+ color:0x6840dc
+});
+
+box(
+ 0,5,-20.7,
+ 20,3,.3,
+ signMat
+);
+
+
+/* =========================
+   ROOF LIGHTS
+========================= */
+
+for(let x=-20;x<=20;x+=8){
+
+ for(let z=-15;z<=10;z+=8){
+
+  const lamp=box(
+   x,5.7,z,
+   3,.15,1,
+   new THREE.MeshStandardMaterial({
+    color:0xffffff,
+    emissive:0xffffff,
+    emissiveIntensity:1
+   })
+  );
+
+ }
+}
+
+
+/* =========================
+   SHELVES
+========================= */
+
+const products=[
+ ["🥛",0xffeeee],
+ ["🍞",0xc98745],
+ ["🥤",0x3498db],
+ ["🍎",0xe74c3c],
+ ["🍪",0xe5b52c],
+ ["🥫",0x65a84b],
+ ["🍫",0x75402c],
+ ["🧼",0xa95fd1]
+];
+
+const shelfPositions=[
+ [-18,-10],
+ [-9,-10],
+ [0,-10],
+ [9,-10],
+ [18,-10],
+
+ [-18,0],
+ [-9,0],
+ [0,0],
+ [9,0],
+ [18,0],
+
+ [-18,10],
+ [-9,10],
+ [0,10],
+ [9,10],
+ [18,10]
+];
+
+const shelves=[];
+
+function createShelf(x,z,index){
+
+ const group=new THREE.Group();
+
+ group.position.set(x,0,z);
+
+ /* shelf body */
+
+ box(
+  0,1.5,0,
+  5,.25,1.5,
+  woodMat,
+  group
+ );
+
+ box(
+  0,2.5,0,
+  5,.25,1.5,
+  woodMat,
+  group
+ );
+
+ box(
+  0,3.5,0,
+  5,.25,1.5,
+  woodMat,
+  group
+ );
+
+ /* vertical supports */
+
+ box(
+  -2.3,2.5,0,
+  .18,4,.18,
+  metalMat,
+  group
+ );
+
+ box(
+  2.3,2.5,0,
+  .18,4,.18,
+  metalMat,
+  group
+ );
+
+
+ /* products */
+
+ for(let row=0;row<3;row++){
+
+  for(let i=0;i<7;i++){
+
+   const p=products[
+    (index+row)%products.length
+   ];
+
+   const product=box(
+    -1.8+i*.6,
+    1.85+row,
+    -.85,
+    .35,.45,.35,
+    new THREE.MeshStandardMaterial({
+     color:p[1]
+    }),
+    group
+   );
+
+  }
+ }
+
+ scene.add(group);
+
+ shelves.push({
+  x,
+  z,
+  group
+ });
+}
+
+
+shelfPositions.forEach((p,i)=>{
+ createShelf(p[0],p[1],i);
+});
+
+
+/* =========================
+   CHECKOUT
+========================= */
+
+const checkout=box(
+ 0,1,16,
+ 10,2,2,
+ metalMat
+);
+
+const counterTop=box(
+ 0,2.1,16,
+ 10,.25,2.2,
+ new THREE.MeshStandardMaterial({
+  color:0x6b4b2c
+ })
+);
+
+
+/* =========================
+   CASHIER
+========================= */
+
+function createCharacter(
+ x,z,color
+){
+
+ const g=new THREE.Group();
+
+ g.position.set(x,0,z);
+
+ const body=box(
+ 0,1.3,0,
+ .9,1.7,.6,
+ new THREE.MeshStandardMaterial({
+  color
+ }),
+ g
+ );
+
+ const head=box(
+ 0,2.55,0,
+ .65,.65,.65,
+ new THREE.MeshStandardMaterial({
+  color:0xf0b18b
+ }),
+ g
+ );
+
+ scene.add(g);
+
+ return g;
+}
+
+createCharacter(
+ 0,14,
+ 0x3d54d8
+);
+
+
+/* =========================
+   PLAYER
+========================= */
+
+const playerGroup=createCharacter(
+ player.x,
+ player.z,
+ 0x7d4cff
+);
+
+playerGroup.scale.set(1.05,1.05,1.05);
+
+
+/* =========================
+   CUSTOMERS
+========================= */
+
+const customers=[];
+
+function spawnCustomer(){
+
+ if(customers.length>=12)return;
+
+ const c=createCharacter(
+  -22+Math.random()*44,
+  18,
+  [
+   0xe85d75,
+   0x4d91e8,
+   0x57b66b,
+   0xe7b44c,
+   0xa866d9
+  ][Math.floor(Math.random()*5)]
+ );
+
+ c.userData={
+  target:shelves[
+   Math.floor(Math.random()*shelves.length)
+  ],
+  state:"shopping",
+  timer:0
+ };
+
+ customers.push(c);
+ customerCount++;
+
+ updateUI();
+}
+
+
+/* =========================
+   CUSTOMER AI
+========================= */
+
+function updateCustomers(){
+
+ for(let i=customers.length-1;i>=0;i--){
+
+  const c=customers[i];
+
+  if(c.userData.state==="shopping"){
+
+   const target=c.userData.target;
+
+   const dx=target.x-c.position.x;
+   const dz=target.z-c.position.z;
+
+   const d=Math.hypot(dx,dz);
+
+   if(d>2.2){
+
+    c.position.x+=dx/d*.025;
+    c.position.z+=dz/d*.025;
+
+   }else{
+
+    c.userData.timer++;
+
+    if(c.userData.timer>120){
+
+     money+=15;
+     sold++;
+
+     c.userData.state="checkout";
+     c.userData.timer=0;
+
+     updateUI();
+    }
+   }
+
+  }else{
+
+   const dx=0-c.position.x;
+   const dz=16-c.position.z;
+
+   const d=Math.hypot(dx,dz);
+
+   if(d>1){
+
+    c.position.x+=dx/d*.03;
+    c.position.z+=dz/d*.03;
+
+   }else{
+
+    c.userData.timer++;
+
+    if(c.userData.timer>70){
+
+     scene.remove(c);
+     customers.splice(i,1);
+
+    }
+   }
+  }
+ }
+}
+
+
+/* =========================
+   PLAYER MOVEMENT
+========================= */
+
+let joyX=0;
+let joyY=0;
+
+function movePlayer(){
+
+ let dx=0;
+ let dz=0;
+
+ if(keys["w"]||keys["arrowup"])dz-=1;
+ if(keys["s"]||keys["arrowdown"])dz+=1;
+ if(keys["a"]||keys["arrowleft"])dx-=1;
+ if(keys["d"]||keys["arrowright"])dx+=1;
+
+ dx+=joyX;
+ dz+=joyY;
+
+ const len=Math.hypot(dx,dz);
+
+ if(len>0){
+
+  dx/=len;
+  dz/=len;
+
+  player.x+=dx*player.speed;
+  player.z+=dz*player.speed;
+
+  player.x=Math.max(-24,Math.min(24,player.x));
+  player.z=Math.max(-18,Math.min(18,player.z));
+
+  playerGroup.position.x=player.x;
+  playerGroup.position.z=player.z;
+
+  playerGroup.rotation.y=Math.atan2(dx,dz);
+ }
+}
+
+
+/* =========================
+   BUY / SELL
+========================= */
+
+function buy(){
+
+ let near=null;
+ let distance=999;
+
+ for(const s of shelves){
+
+  const d=Math.hypot(
+   player.x-s.x,
+   player.z-s.z
+  );
+
+  if(d<distance){
+
+   distance=d;
+   near=s;
+  }
+ }
+
+ if(near && distance<4){
+
+  money+=25;
+  sold++;
+
+  showMessage("📦 Product sold! +₹25");
+
+  updateUI();
+
+ }else{
+
+  showMessage("🛒 Shelf ke paas jao!");
+ }
+}
+
+document.getElementById("buy").onclick=buy;
+
+
+/* =========================
+   JOYSTICK
+========================= */
+
+const joy=document.getElementById("joy");
+const knob=document.getElementById("knob");
+
+let active=false;
+
+function joyMove(e){
+
+ const r=joy.getBoundingClientRect();
+
+ const cx=r.left+r.width/2;
+ const cy=r.top+r.height/2;
+
+ let x=e.clientX-cx;
+ let y=e.clientY-cy;
+
+ const max=42;
+ const d=Math.hypot(x,y);
+
+ if(d>max){
+  x=x/d*max;
+  y=y/d*max;
+ }
+
+ joyX=x/max;
+ joyY=y/max;
+
+ knob.style.transform=
+ `translate(${x}px,${y}px)`;
+}
+
+joy.addEventListener("pointerdown",e=>{
+ active=true;
+ joy.setPointerCapture(e.pointerId);
+ joyMove(e);
+});
+
+joy.addEventListener("pointermove",e=>{
+ if(active)joyMove(e);
+});
+
+joy.addEventListener("pointerup",()=>{
+ active=false;
+ joyX=joyY=0;
+ knob.style.transform="";
+});
+
+
+/* =========================
+   CAMERA
+========================= */
+
+function updateCamera(){
+
+ const targetX=playerGroup.position.x;
+ const targetZ=playerGroup.position.z;
+
+ camera.position.x +=
+  (targetX-camera.position.x)*.08;
+
+ camera.position.z +=
+  (targetZ+9-camera.position.z)*.08;
+
+ camera.position.y=14;
+
+ camera.lookAt(
+  targetX,
+  1,
+  targetZ
+ );
+}
+
+
+/* =========================
+   UI
+========================= */
+
+function updateUI(){
+
+ document.getElementById("money").innerText=
+ Math.floor(money).toLocaleString("en-IN");
+
+ document.getElementById("customers").innerText=
+ customers.length;
+
+ document.getElementById("level").innerText=
+ level;
+}
+
+
+let msgTimeout;
+
+function showMessage(t){
+
+ const el=document.getElementById("hint");
+
+ el.innerHTML=t;
+
+ clearTimeout(msgTimeout);
+
+ msgTimeout=setTimeout(()=>{
+  el.innerHTML=
+  "WASD / Arrow Keys se move karo<br>Shelf ke paas jao aur BUY dabao";
+ },1500);
+}
+
+
+/* =========================
+   START CUSTOMERS
+========================= */
+
+for(let i=0;i<5;i++){
+
+ setTimeout(()=>{
+  spawnCustomer();
+ },i*500);
+}
+
+setInterval(()=>{
+ spawnCustomer();
+},3000);
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener("resize",()=>{
+
+ camera.aspect=
+ innerWidth/innerHeight;
+
+ camera.updateProjectionMatrix();
+
+ renderer.setSize(
+  innerWidth,
+  innerHeight
+ );
+});
+
+
+/* =========================
+   GAME LOOP
+========================= */
+
+function animate(){
+
+ requestAnimationFrame(animate);
+
+ movePlayer();
+ updateCustomers();
+ updateCamera();
+
+ renderer.render(
+  scene,
+  camera
+ );
+}
+
+updateUI();
+animate();
+
+</script>
+</body>
+</html>
