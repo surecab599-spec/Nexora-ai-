@@ -1,1 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Supermarket Tycoon</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#151515;font-family:Arial,sans-serif;touch-action:none}
+canvas{display:block;width:100%;height:100%;background:#ddd}
 
+#hud{
+ position:fixed;top:10px;left:10px;right:10px;
+ display:flex;justify-content:space-between;pointer-events:none;
+ z-index:5;
+}
+.box{
+ background:#111d;color:white;border:2px solid #ffffff22;
+ border-radius:12px;padding:8px 12px;font-weight:bold;
+ box-shadow:0 3px 12px #0005
+}
+#message{
+ position:fixed;top:62px;left:50%;transform:translateX(-50%);
+ background:#111;color:#fff;padding:9px 15px;border-radius:20px;
+ opacity:0;transition:.2s;z-index:6;pointer-events:none
+}
+#message.show{opacity:1}
+
+#joystick{
+ position:fixed;left:25px;bottom:25px;width:125px;height:125px;
+ border-radius:50%;background:#0003;border:2px solid #fff5;z-index:10
+}
+#stick{
+ position:absolute;left:37px;top:37px;width:47px;height:47px;
+ border-radius:50%;background:#ffffffaa;border:2px solid #fff
+}
+#action{
+ position:fixed;right:25px;bottom:35px;width:75px;height:75px;
+ border-radius:50%;background:#6d43e8;color:#fff;border:3px solid #fff8;
+ font-size:14px;font-weight:bold;z-index:10
+}
+#upgrade{
+ position:fixed;right:20px;top:70px;background:#ffbd27;color:#111;
+ border:0;border-radius:10px;padding:9px 12px;font-weight:bold;z-index:10
+}
+#help{
+ position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+ color:#111;background:#fff9;padding:5px 9px;border-radius:8px;
+ font-size:12px;z-index:3
+}
+@media(min-width:800px){
+ #joystick{width:140px;height:140px}
+ #stick{left:42px;top:42px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+ <div class="box">💰 ₹<span id="money">500</span></div>
+ <div class="box">🛒 Customers: <span id="customers">0</span></div>
+ <div class="box">⭐ Level <span id="level">1</span></div>
+</div>
+
+<div id="message"></div>
+
+<button id="upgrade">🏪 Upgrade ₹1000</button>
+
+<div id="joystick">
+ <div id="stick"></div>
+</div>
+
+<button id="action">ACTION</button>
+
+<div id="help">🧍 Move • Stand near items • ACTION</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+let W,H;
+function resize(){
+ W=canvas.width=innerWidth;
+ H=canvas.height=innerHeight;
+}
+addEventListener("resize",resize);
+resize();
+
+/* WORLD */
+const world={
+ w:2200,
+ h:1400
+};
+
+let camera={x:0,y:0};
+
+let game={
+ money:500,
+ customers:0,
+ level:1,
+ sold:0,
+ stock:80,
+ upgradeCost:1000
+};
+
+let player={
+ x:1100,
+ y:1160,
+ r:18,
+ speed:3.5
+};
+
+let keys={};
+
+addEventListener("keydown",e=>{
+ keys[e.key.toLowerCase()]=true;
+ if(e.key===" ") action();
+});
+
+addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+});
+
+/* PRODUCTS */
+const products=[
+ {name:"🥛 Milk",x:570,y:390,color:"#f3f3f3"},
+ {name:"🍞 Bread",x:850,y:390,color:"#d89c50"},
+ {name:"🥤 Drinks",x:1130,y:390,color:"#43a8e8"},
+ {name:"🍎 Fruits",x:1410,y:390,color:"#e84b4b"},
+ {name:"🍪 Snacks",x:570,y:690,color:"#e8b52e"},
+ {name:"🍚 Rice",x:850,y:690,color:"#ded8b8"},
+ {name:"🥫 Cans",x:1130,y:690,color:"#79a84a"},
+ {name:"🧼 Soap",x:1410,y:690,color:"#c76ee8"},
+ {name:"🍫 Chocolate",x:850,y:930,color:"#8a542f"},
+ {name:"🧃 Juice",x:1130,y:930,color:"#f08d3c"}
+];
+
+/* SHELVES */
+const shelves=[
+ {x:480,y:320,w:250,h:120},
+ {x:760,y:320,w:250,h:120},
+ {x:1040,y:320,w:250,h:120},
+ {x:1320,y:320,w:250,h:120},
+
+ {x:480,y:620,w:250,h:120},
+ {x:760,y:620,w:250,h:120},
+ {x:1040,y:620,w:250,h:120},
+ {x:1320,y:620,w:250,h:120},
+
+ {x:760,y:860,w:250,h:100},
+ {x:1040,y:860,w:250,h:100}
+];
+
+/* WALLS */
+const walls=[
+ {x:300,y:180,w:1600,h:35},
+ {x:300,y:180,w:35,h:1050},
+ {x:1865,y:180,w:35,h:1050},
+ {x:300,y:1195,w:1600,h:35},
+
+ /* entrance gaps visually handled by gate */
+];
+
+/* CUSTOMERS */
+let people=[];
+
+function spawnCustomer(){
+
+ if(people.length>=10+game.level*3)return;
+
+ const c={
+  x:360,
+  y:1080,
+  r:16,
+  target:null,
+  color:["#f5a5a5","#82b6f4","#f4d47c","#9ee0a8","#d49af2"][Math.floor(Math.random()*5)],
+  state:"enter",
+  timer:0
+ };
+
+ chooseProduct(c);
+ people.push(c);
+}
+
+/* CHOOSE PRODUCT */
+function chooseProduct(c){
+
+ let p=products[Math.floor(Math.random()*products.length)];
+
+ c.target=p;
+ c.state="shopping";
+}
+
+/* COLLISION */
+function circleRect(px,py,r,rect){
+
+ const cx=Math.max(rect.x,Math.min(px,rect.x+rect.w));
+ const cy=Math.max(rect.y,Math.min(py,rect.y+rect.h));
+
+ const dx=px-cx;
+ const dy=py-cy;
+
+ return dx*dx+dy*dy<r*r;
+}
+
+function blocked(x,y,r){
+
+ for(const s of shelves)
+  if(circleRect(x,y,r,s))return true;
+
+ for(const w of walls)
+  if(circleRect(x,y,r,w))return true;
+
+ return false;
+}
+
+/* PLAYER */
+function movePlayer(){
+
+ let dx=0,dy=0;
+
+ if(keys["w"]||keys["arrowup"])dy--;
+ if(keys["s"]||keys["arrowdown"])dy++;
+ if(keys["a"]||keys["arrowleft"])dx--;
+ if(keys["d"]||keys["arrowright"])dx++;
+
+ if(joy.dx||joy.dy){
+  dx=joy.dx;
+  dy=joy.dy;
+ }
+
+ const len=Math.hypot(dx,dy);
+
+ if(len){
+  dx/=len;
+  dy/=len;
+
+  let nx=player.x+dx*player.speed;
+  let ny=player.y+dy*player.speed;
+
+  if(!blocked(nx,player.y,player.r))player.x=nx;
+  if(!blocked(player.x,ny,player.r))player.y=ny;
+ }
+
+ player.x=Math.max(355,Math.min(world.w-355,player.x));
+ player.y=Math.max(240,Math.min(world.h-250,player.y));
+}
+
+/* ACTION */
+function action(){
+
+ let nearest=null;
+ let dist=9999;
+
+ for(const p of products){
+
+  const d=Math.hypot(
+   player.x-p.x,
+   player.y-p.y
+  );
+
+  if(d<100 && d<dist){
+   nearest=p;
+   dist=d;
+  }
+ }
+
+ if(nearest){
+
+  if(game.stock<=0){
+   say("❌ Stock khatam!");
+   return;
+  }
+
+  game.stock--;
+  game.money+=25;
+  game.sold++;
+
+  say("📦 "+nearest.name+" sold! +₹25");
+  updateHud();
+  return;
+ }
+
+ /* CASH COUNTER */
+ if(
+  Math.abs(player.x-1100)<130 &&
+  player.y>1080
+ ){
+  say("💰 Cash counter");
+ }
+}
+
+/* CUSTOMER AI */
+function updateCustomers(){
+
+ for(let i=people.length-1;i>=0;i--){
+
+  const c=people[i];
+
+  if(c.state==="shopping"){
+
+   const dx=c.target.x-c.x;
+   const dy=c.target.y-c.y;
+   const d=Math.hypot(dx,dy);
+
+   if(d>45){
+
+    c.x+=dx/d*1.2;
+    c.y+=dy/d*1.2;
+
+   }else{
+
+    c.timer++;
+
+    if(c.timer>70){
+
+     if(game.stock>0){
+
+      game.stock--;
+      game.money+=15;
+      game.sold++;
+      game.customers++;
+      game.customers++;
+
+      say("🛒 Customer bought "+c.target.name+" +₹15");
+
+     }
+
+     c.state="checkout";
+     c.timer=0;
+    }
+   }
+
+  }else if(c.state==="checkout"){
+
+   const tx=1100;
+   const ty=1080;
+
+   const dx=tx-c.x;
+   const dy=ty-c.y;
+   const d=Math.hypot(dx,dy);
+
+   if(d>30){
+
+    c.x+=dx/d*1.5;
+    c.y+=dy/d*1.5;
+
+   }else{
+
+    c.timer++;
+
+    if(c.timer>40){
+
+     c.state="exit";
+    }
+   }
+
+  }else if(c.state==="exit"){
+
+   c.x-=1.8;
+
+   if(c.x<250)
+    people.splice(i,1);
+  }
+ }
+}
+
+/* JOYSTICK */
+const joystick=document.getElementById("joystick");
+const stick=document.getElementById("stick");
+
+let joy={dx:0,dy:0};
+let dragging=false;
+
+function joystickMove(e){
+
+ const r=joystick.getBoundingClientRect();
+
+ const cx=r.left+r.width/2;
+ const cy=r.top+r.height/2;
+
+ let dx=e.clientX-cx;
+ let dy=e.clientY-cy;
+
+ const max=45;
+ const d=Math.hypot(dx,dy);
+
+ if(d>max){
+  dx=dx/d*max;
+  dy=dy/d*max;
+ }
+
+ joy.dx=dx/max;
+ joy.dy=dy/max;
+
+ stick.style.transform=
+ `translate(${dx}px,${dy}px)`;
+}
+
+function joystickEnd(){
+
+ dragging=false;
+ joy.dx=joy.dy=0;
+ stick.style.transform="";
+}
+
+joystick.addEventListener("pointerdown",e=>{
+ dragging=true;
+ joystick.setPointerCapture(e.pointerId);
+ joystickMove(e);
+});
+
+joystick.addEventListener("pointermove",e=>{
+ if(dragging)joystickMove(e);
+});
+
+joystick.addEventListener("pointerup",joystickEnd);
+joystick.addEventListener("pointercancel",joystickEnd);
+
+/* CAMERA */
+function updateCamera(){
+
+ camera.x=player.x-W/2;
+ camera.y=player.y-H/2;
+
+ camera.x=Math.max(0,Math.min(world.w-W,camera.x));
+ camera.y=Math.max(0,Math.min(world.h-H,camera.y));
+}
+
+/* DRAW */
+function draw(){
+
+ ctx.clearRect(0,0,W,H);
+
+ ctx.save();
+
+ ctx.translate(-camera.x,-camera.y);
+
+ /* FLOOR */
+ ctx.fillStyle="#d8d4c7";
+ ctx.fillRect(0,0,world.w,world.h);
+
+ /* FLOOR TILES */
+ ctx.strokeStyle="#c7c2b5";
+ ctx.lineWidth=1;
+
+ for(let x=350;x<1900;x+=70){
+  for(let y=220;y<1200;y+=70){
+   ctx.strokeRect(x,y,70,70);
+  }
+ }
+
+ /* WALLS */
+ ctx.fillStyle="#313847";
+
+ for(const w of walls){
+  ctx.fillRect(w.x,w.y,w.w,w.h);
+ }
+
+ /* FRONT */
+ ctx.fillStyle="#242a38";
+ ctx.fillRect(300,1080,1600,115);
+
+ /* SIGN */
+ ctx.fillStyle="#7c4dff";
+ ctx.fillRect(800,205,600,75);
+
+ ctx.fillStyle="#fff";
+ ctx.font="bold 32px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("🛒 NEXORA MARKET",1100,255);
+
+ /* SHELVES */
+ for(const s of shelves){
+
+  ctx.fillStyle="#80502f";
+  ctx.fillRect(s.x,s.y,s.w,s.h);
+
+  ctx.fillStyle="#5b3824";
+  ctx.fillRect(s.x,s.y+10,s.w,10);
+  ctx.fillRect(s.x,s.y+s.h/2,s.w,10);
+
+  /* products */
+  for(let i=0;i<6;i++){
+
+   const colors=[
+    "#f04d4d","#4da7ed","#f0c94d",
+    "#67c76b","#bd72df","#ef8c3f"
+   ];
+
+   ctx.fillStyle=colors[i%colors.length];
+
+   ctx.beginPath();
+   ctx.roundRect(
+    s.x+15+i*38,
+    s.y+28,
+    24,25,5
+   );
+   ctx.fill();
+
+   ctx.fillStyle=colors[(i+2)%colors.length];
+
+   ctx.beginPath();
+   ctx.roundRect(
+    s.x+15+i*38,
+    s.y+68,
+    24,25,5
+   );
+   ctx.fill();
+  }
+ }
+
+ /* PRODUCT LABELS */
+ ctx.font="22px Arial";
+
+ for(const p of products){
+
+  ctx.textAlign="center";
+
+  ctx.fillStyle="#111";
+  ctx.fillText(
+   p.name,
+   p.x+125,
+   p.y-12
+  );
+ }
+
+ /* CHECKOUT */
+ ctx.fillStyle="#4b5365";
+ ctx.fillRect(990,1050,220,80);
+
+ ctx.fillStyle="#fff";
+ ctx.font="bold 18px Arial";
+ ctx.fillText("💰 CHECKOUT",1100,1098);
+
+ /* CUSTOMERS */
+ for(const c of people){
+
+  ctx.fillStyle=c.color;
+
+  ctx.beginPath();
+  ctx.arc(c.x,c.y,c.r,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#222";
+  ctx.beginPath();
+  ctx.arc(c.x-6,c.y-3,2,0,Math.PI*2);
+  ctx.arc(c.x+6,c.y-3,2,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle="#222";
+  ctx.beginPath();
+  ctx.arc(c.x,c.y+3,6,0,Math.PI);
+  ctx.stroke();
+ }
+
+ /* PLAYER SHADOW */
+ ctx.fillStyle="#0003";
+ ctx.beginPath();
+ ctx.ellipse(
+  player.x,
+  player.y+22,
+  22,8,0,0,Math.PI*2
+ );
+ ctx.fill();
+
+ /* PLAYER BODY */
+ ctx.fillStyle="#6346d9";
+ ctx.beginPath();
+ ctx.arc(
+  player.x,
+  player.y,
+  player.r,
+  0,Math.PI*2
+ );
+ ctx.fill();
+
+ /* PLAYER HEAD */
+ ctx.fillStyle="#f2b48f";
+ ctx.beginPath();
+ ctx.arc(
+  player.x,
+  player.y-21,
+  12,
+  0,Math.PI*2
+ );
+ ctx.fill();
+
+ /* HAIR */
+ ctx.fillStyle="#222";
+ ctx.beginPath();
+ ctx.arc(
+  player.x,
+  player.y-25,
+  12,
+  Math.PI,Math.PI*2
+ );
+ ctx.fill();
+
+ /* PLAYER LABEL */
+ ctx.fillStyle="#111";
+ ctx.font="bold 13px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("YOU",player.x,player.y+43);
+
+ ctx.restore();
+}
+
+/* UPGRADE */
+document.getElementById("upgrade").onclick=()=>{
+
+ if(game.money<game.upgradeCost){
+  say("❌ ₹"+game.upgradeCost+" chahiye!");
+  return;
+ }
+
+ game.money-=game.upgradeCost;
+ game.level++;
+ game.upgradeCost=Math.floor(game.upgradeCost*1.8);
+
+ player.speed+=.2;
+
+ say("🏪 Supermarket upgraded! Level "+game.level);
+ updateHud();
+};
+
+/* MESSAGE */
+let msgTimer;
+
+function say(text){
+
+ const el=document.getElementById("message");
+
+ el.innerText=text;
+ el.classList.add("show");
+
+ clearTimeout(msgTimer);
+
+ msgTimer=setTimeout(()=>{
+  el.classList.remove("show");
+ },1800);
+}
+
+/* HUD */
+function updateHud(){
+
+ document.getElementById("money").innerText=
+ Math.floor(game.money).toLocaleString("en-IN");
+
+ document.getElementById("customers").innerText=
+ game.customers;
+
+ document.getElementById("level").innerText=
+ game.level;
+
+ document.getElementById("upgrade").innerText=
+ "🏪 Upgrade ₹"+
+ game.upgradeCost.toLocaleString("en-IN");
+}
+
+/* LOOP */
+let last=0;
+
+function loop(t){
+
+ if(t-last>16){
+
+  movePlayer();
+  updateCustomers();
+  updateCamera();
+  draw();
+
+  last=t;
+ }
+
+ requestAnimationFrame(loop);
+}
+
+/* SPAWN */
+setInterval(()=>{
+ spawnCustomer();
+},1800);
+
+/* START */
+updateHud();
+say("🏪 Welcome! Customers aa rahe hain...");
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
