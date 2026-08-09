@@ -45,7 +45,77 @@ textarea{width:100%;min-height:130px;background:#0d101a;border:1px solid #30364b
 <nav><button class="active" onclick="closeTool()"><span>⌂</span>Home</button><button onclick="openTool('chat')"><span>◉</span>Chat</button><button onclick="alert('Tools are on the home screen')"><span>✦</span>Tools</button><button onclick="alert('Profile coming next')"><span>●</span>Profile</button></nav>
 </div>
 <script>
-function openTool(id){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.getElementById(id).scrollIntoView({behavior:'smooth'})}
-function closeTool(){document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));scrollTo({top:0,behavior:'smooth'})}
-function send(){let q=document.getElementById('q'),v=q.value.trim();if(!v)return;let m=document.getElementById('msgs');m.innerHTML+=`<div class="bubble me">${v.replaceAll('<','&lt;')}</div><div class="bubble">This is the UI prototype. Connect a secure AI backend to get real answers.</div>`;q.value='';m.scrollTop=m.scrollHeight}
-</script></body></html>
+function openTool(id){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function closeTool(){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function sendChat(){
+  const box = document.querySelector('#chat textarea');
+  const message = box.value.trim();
+
+  if(!message) return;
+
+  const chat = document.querySelector('#chat .chat');
+
+  const userMsg = document.createElement('div');
+  userMsg.className = 'bubble';
+  userMsg.textContent = message;
+  chat.appendChild(userMsg);
+
+  box.value = '';
+
+  const loading = document.createElement('div');
+  loading.className = 'bubble';
+  loading.textContent = 'NEXORA is thinking...';
+  chat.appendChild(loading);
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message })
+    });
+
+    const data = await response.json();
+
+    loading.textContent = data.answer || data.error || 'Something went wrong.';
+  } catch(error) {
+    loading.textContent = 'Connection error. Please try again.';
+  }
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const chatPanel = document.querySelector('#chat');
+
+  if(!chatPanel) return;
+
+  const textarea = chatPanel.querySelector('textarea');
+
+  if(textarea){
+    textarea.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        sendChat();
+      }
+    });
+  }
+
+  const button = document.createElement('button');
+  button.textContent = 'Send 🚀';
+  button.className = 'active';
+  button.style.marginTop = '8px';
+  button.onclick = sendChat;
+
+  chatPanel.appendChild(button);
+});
+  </script>
