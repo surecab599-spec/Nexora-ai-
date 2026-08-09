@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nexora AI</title>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;height:100vh;background:#0b0d12;color:#f5f7fb;font-family:Arial,sans-serif;overflow:hidden}
+.app{height:100vh;display:flex}
+.side{width:280px;background:#11141c;border-right:1px solid #292e3a;padding:14px;display:flex;flex-direction:column;gap:12px}
+.logo{font-size:21px;font-weight:800;padding:10px}
+.btn{width:100%;padding:11px;border:1px solid #343a4a;background:#191d27;color:#fff;border-radius:11px;cursor:pointer}
+.history{flex:1;overflow:auto}
+.history button{width:100%;border:0;background:transparent;color:#ddd;text-align:left;padding:10px;border-radius:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.history button:hover{background:#1d2230}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:58px;border-bottom:1px solid #242936;display:flex;align-items:center;padding:0 15px;gap:10px}
+.menu{display:none;background:none;border:0;color:#fff;font-size:24px}
+.title{font-weight:700}
+.status{margin-left:auto;color:#8f97aa;font-size:12px}
+.chat{flex:1;overflow:auto;padding:25px max(14px,calc((100% - 900px)/2))}
+.msg{display:flex;gap:10px;margin:18px 0;align-items:flex-start}
+.msg.user{justify-content:flex-end}
+.avatar{width:34px;height:34px;border-radius:10px;background:#272d3d;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.user .avatar{order:2;background:#7650e8}
+.bubble{max-width:min(780px,88%);background:#171b25;border-radius:17px;padding:13px 16px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.user .bubble{background:#7046e8}
+.composer{border-top:1px solid #242936;padding:9px max(14px,calc((100% - 900px)/2)) 14px}
+.tools{display:flex;gap:7px;overflow:auto;padding-bottom:8px}
+.tool{white-space:nowrap;border:1px solid #303647;background:#11151e;color:#dce0e9;border-radius:9px;padding:7px 10px;cursor:pointer}
+.box{display:flex;gap:8px;border:1px solid #363c4d;background:#11151e;border-radius:18px;padding:7px}
+textarea{flex:1;min-height:48px;max-height:170px;resize:none;border:0;outline:0;background:transparent;color:#fff;padding:12px;font-size:16px}
+.send{width:48px;border:0;border-radius:14px;background:#7650e8;color:#fff;font-size:21px;cursor:pointer}
+.send:disabled{opacity:.5}
+.hint{text-align:center;color:#747d90;font-size:11px;padding-top:7px}
+.panel{position:fixed;right:-340px;top:0;bottom:0;width:330px;background:#11151e;border-left:1px solid #303647;padding:18px;z-index:40;transition:.2s}
+.panel.open{right:0}
+.panel h3{margin-top:0}
+.close{float:right;background:none;border:0;color:#fff;font-size:25px;cursor:pointer}
+.panel label{display:block;color:#aeb5c5;font-size:13px;margin:14px 0 5px}
+.panel select{width:100%;padding:10px;border-radius:9px;background:#0b0e14;color:#fff;border:1px solid #343a4b}
+.overlay{display:none}
+
+@media(max-width:700px){
+.side{position:fixed;z-index:30;left:-290px;top:0;bottom:0;transition:.2s}
+.side.open{left:0}
+.menu{display:block}
+.overlay.show{display:block;position:fixed;inset:0;background:#0008;z-index:20}
+.bubble{max-width:90%}
+.chat{padding:14px 10px}
+.panel{width:90vw}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div id="overlay" class="overlay" onclick="closeAll()"></div>
+
+<aside id="side" class="side">
+
+<div class="logo">✦ NEXORA AI</div>
+
+<button class="btn" onclick="newChat()">＋ New chat</button>
+
+<div id="history" class="history"></div>
+
+<button class="btn" onclick="clearHistory()">🗑 Clear history</button>
+
+<button class="btn" onclick="openSettings()">⚙ Settings</button>
+
+</aside>
+
+
+<main class="main">
+
+<header class="top">
+
+<button class="menu" onclick="toggleSide()">☰</button>
+
+<div class="title">Nexora AI</div>
+
+<div class="status" id="status">Ready</div>
+
+<button class="btn"
+style="width:auto;padding:7px 10px"
+onclick="openSettings()">⚙</button>
+
+</header>
+
+
+<section id="chat" class="chat"></section>
+
+
+<div class="composer">
+
+<div class="tools">
+
+<button class="tool" onclick="voice()">🎙 Voice</button>
+
+<button class="tool"
+onclick="document.getElementById('file').click()">
+📎 File
+</button>
+
+<button class="tool" onclick="setMode('web')">
+🌐 Web mode
+</button>
+
+<button class="tool" onclick="setMode('normal')">
+💬 Normal
+</button>
+
+</div>
+
+<input id="file"
+type="file"
+hidden
+onchange="fileSelected(this.files[0])">
+
+<div class="box">
+
+<textarea
+id="input"
+placeholder="Message Nexora AI..."
+rows="1"></textarea>
+
+<button
+id="send"
+class="send"
+onclick="send()">➤</button>
+
+</div>
+
+<div class="hint">
+Enter to send • Shift+Enter for new line
+</div>
+
+</div>
+
+</main>
+</div>
+
+
+<div id="settings" class="panel">
+
+<button class="close" onclick="closeAll()">×</button>
+
+<h3>Settings</h3>
+
+<label>Model</label>
+
+<select id="model">
+
+<option value="gpt-4.1-mini">
+GPT-4.1 mini
+</option>
+
+<option value="gpt-4.1">
+GPT-4.1
+</option>
+
+</select>
+
+
+<label>Response style</label>
+
+<select id="style">
+
+<option>Helpful and concise</option>
+
+<option>Detailed</option>
+
+<option>Creative</option>
+
+</select>
+
+<br><br>
+
+<button class="btn" onclick="saveSettings()">
+Save
+</button>
+
+</div>
+
+
+<script>
+
+const STORE="nexora_final_v1";
+
+let chats=
+JSON.parse(
+localStorage.getItem(STORE)||"[]"
+);
+
+let current=null;
+
+let busy=false;
+
+let mode="normal";
+
+
+let settings=
+JSON.parse(
+localStorage.getItem("nexora_settings")||
+'{"model":"gpt-4.1-mini","style":"Helpful and concise"}'
+);
+
+
+/* SAVE */
+
+function persist(){
+
+ localStorage.setItem(
+  STORE,
+  JSON.stringify(chats)
+ );
+
+ renderHistory();
+
+}
+
+
+/* NEW CHAT */
+
+function newChat(){
+
+ current={
+  id:Date.now(),
+  title:"New chat",
+  messages:[]
+ };
+
+ chats.unshift(current);
+
+ persist();
+
+ render();
+
+ closeAll();
+
+}
+
+
+/* HISTORY */
+
+function renderHistory(){
+
+ const h=
+ document.getElementById("history");
+
+ h.innerHTML="";
+
+ chats.forEach(c=>{
+
+  const b=
+  document.createElement("button");
+
+  b.textContent=
+  "💬 "+c.title;
+
+  b.onclick=()=>{
+
+   current=c;
+
+   render();
+
+   closeAll();
+
+  };
+
+  h.appendChild(b);
+
+ });
+
+}
+
+
+/* CHAT */
+
+function render(){
+
+ const box=
+ document.getElementById("chat");
+
+ box.innerHTML="";
+
+
+ if(
+  !current ||
+  !current.messages.length
+ ){
+
+  box.innerHTML=`
+
+  <div class="msg">
+
+   <div class="avatar">N</div>
+
+   <div class="bubble">
+
+   Hi! I’m Nexora AI 👋
+
+   \n\n
+
+   Ask me anything.
+
+   </div>
+
+  </div>
+
+  `;
+
+  return;
+
+ }
+
+
+ current.messages.forEach(m=>{
+
+  const row=
+  document.createElement("div");
+
+  row.className=
+  "msg "+
+  (m.role==="user"?"user":"");
+
+
+  row.innerHTML=`
+
+  <div class="avatar">
+  ${m.role==="user"?"You":"N"}
+  </div>
+
+  <div class="bubble"></div>
+
+  `;
+
+
+  row.querySelector(".bubble")
+  .textContent=m.content;
+
+
+  box.appendChild(row);
+
+ });
+
+
+ box.scrollTop=
+ box.scrollHeight;
+
+}
+
+
+/* MESSAGE */
+
+function add(role,content){
+
+ if(!current){
+
+  newChat();
+
+ }
+
+ current.messages.push({
+
+  role:role,
+
+  content:content
+
+ });
+
+
+ if(
+  role==="user" &&
+  current.title==="New chat"
+ ){
+
+  current.title=
+  content.slice(0,32);
+
+ }
+
+ persist();
+
+ render();
+
+}
+
+
+/* REAL AI */
+
+async function send(){
+
+ if(busy)return;
+
+ const input=
+ document.getElementById("input");
+
+ const text=
+ input.value.trim();
+
+ if(!text)return;
+
+
+ add("user",text);
+
+ input.value="";
+
+ busy=true;
+
+ document.getElementById("send")
+ .disabled=true;
+
+ document.getElementById("status")
+ .textContent="Thinking…";
+
+
+ try{
+
+  const response=
+  await fetch(
+   "/api/chat",
+   {
+    method:"POST",
+
+    headers:{
+     "Content-Type":
+     "application/json"
+    },
+
+    body:JSON.stringify({
+
+     messages:
+     current.messages,
+
+     model:
+     settings.model,
+
+     style:
+     settings.style,
+
+     mode:mode
+
+    })
+
+   }
+  );
+
+
+  const data=
+  await response.json();
+
+
+  if(!response.ok){
+
+   throw new Error(
+    data.error ||
+    "AI request failed"
+   );
+
+  }
+
+
+  add(
+   "assistant",
+   data.reply
+  );
+
+
+ }catch(error){
+
+  add(
+   "assistant",
+   "⚠️ "+error.message
+  );
+
+ }
+
+
+ busy=false;
+
+ document.getElementById("send")
+ .disabled=false;
+
+ document.getElementById("status")
+ .textContent=
+ mode==="web"
+ ?"Web mode"
+ :"Ready";
+
+}
+
+
+/* ENTER */
+
+document
+.getElementById("input")
+.addEventListener(
+ "keydown",
+ function(e){
+
+  if(
+   e.key==="Enter" &&
+   !e.shiftKey
+  ){
+
+   e.preventDefault();
+
+   send();
+
+  }
+
+ }
+);
+
+
+/* SIDEBAR */
+
+function toggleSide(){
+
+ document
+ .getElementById("side")
+ .classList
+ .toggle("open");
+
+ document
+ .getElementById("overlay")
+ .classList
+ .toggle("show");
+
+}
+
+
+/* SETTINGS */
+
+function openSettings(){
+
+ document
+ .getElementById("settings")
+ .classList
+ .add("open");
+
+ document
+ .getElementById("overlay")
+ .classList
+ .add("show");
+
+ document.getElementById("model")
+ .value=settings.model;
+
+ document.getElementById("style")
+ .value=settings.style;
+
+}
+
+
+function saveSettings(){
+
+ settings={
+
+  model:
+  document.getElementById("model").value,
+
+  style:
+  document.getElementById("style").value
+
+ };
+
+ localStorage.setItem(
+  "nexora_settings",
+  JSON.stringify(settings)
+ );
+
+ closeAll();
+
+}
+
+
+/* CLOSE */
+
+function closeAll(){
+
+ document
+ .getElementById("side")
+ .classList
+ .remove("open");
+
+ document
+ .getElementById("settings")
+ .classList
+ .remove("open");
+
+ document
+ .getElementById("overlay")
+ .classList
+ .remove("show");
+
+}
+
+
+/* DELETE */
+
+function clearHistory(){
+
+ if(
+  confirm("Delete all chats?")
+ ){
+
+  chats=[];
+
+  current=null;
+
+  persist();
+
+  render();
+
+ }
+
+}
+
+
+/* WEB MODE */
+
+function setMode(value){
+
+ mode=value;
+
+ document
+ .getElementById("status")
+ .textContent=
+ value==="web"
+ ?"Web mode"
+ :"Ready";
+
+}
+
+
+/* FILE */
+
+function fileSelected(file){
+
+ if(!file)return;
+
+ add(
+  "user",
+  "📎 File selected: "+
+  file.name
+ );
+
+}
+
+
+/* VOICE */
+
+function voice(){
+
+ const Recognition=
+ window.SpeechRecognition ||
+ window.webkitSpeechRecognition;
+
+
+ if(!Recognition){
+
+  alert(
+   "Voice recognition supported nahi hai."
+  );
+
+  return;
+
+ }
+
+
+ const r=
+ new Recognition();
+
+ r.lang="en-IN";
+
+ r.onstart=()=>{
+
+  document
+  .getElementById("status")
+  .textContent="Listening…";
+
+ };
+
+
+ r.onresult=e=>{
+
+  document
+  .getElementById("input")
+  .value=
+  e.results[0][0].transcript;
+
+ };
+
+
+ r.onend=()=>{
+
+  document
+  .getElementById("status")
+  .textContent="Ready";
+
+ };
+
+
+ r.start();
+
+}
+
+
+/* START */
+
+renderHistory();
+
+newChat();
+
+</script>
+
+</body>
+</html>
