@@ -43,8 +43,7 @@ module.exports = async (req, res) => {
     };
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025
-      encodeURIComponent(apiKey), 
+      "https://generativelanguage.googleapis.com/v1beta/model/gemini-3.5-flash-lite encodeURIComponent(apiKey), 
       {
         method: "POST",
         headers: {
