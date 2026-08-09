@@ -2,55 +2,161 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Nexora AI</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nexora Tycoon</title>
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;height:100vh;background:#0b0d12;color:#f5f7fb;font-family:Arial,sans-serif;overflow:hidden}
-.app{height:100vh;display:flex}
-.side{width:280px;background:#11141c;border-right:1px solid #292e3a;padding:14px;display:flex;flex-direction:column;gap:12px}
-.logo{font-size:21px;font-weight:800;padding:10px}
-.btn{width:100%;padding:11px;border:1px solid #343a4a;background:#191d27;color:#fff;border-radius:11px;cursor:pointer}
-.history{flex:1;overflow:auto}
-.history button{width:100%;border:0;background:transparent;color:#ddd;text-align:left;padding:10px;border-radius:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-.history button:hover{background:#1d2230}
-.main{flex:1;min-width:0;display:flex;flex-direction:column}
-.top{height:58px;border-bottom:1px solid #242936;display:flex;align-items:center;padding:0 15px;gap:10px}
-.menu{display:none;background:none;border:0;color:#fff;font-size:24px}
-.title{font-weight:700}
-.status{margin-left:auto;color:#8f97aa;font-size:12px}
-.chat{flex:1;overflow:auto;padding:25px max(14px,calc((100% - 900px)/2))}
-.msg{display:flex;gap:10px;margin:18px 0;align-items:flex-start}
-.msg.user{justify-content:flex-end}
-.avatar{width:34px;height:34px;border-radius:10px;background:#272d3d;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
-.user .avatar{order:2;background:#7650e8}
-.bubble{max-width:min(780px,88%);background:#171b25;border-radius:17px;padding:13px 16px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
-.user .bubble{background:#7046e8}
-.composer{border-top:1px solid #242936;padding:9px max(14px,calc((100% - 900px)/2)) 14px}
-.tools{display:flex;gap:7px;overflow:auto;padding-bottom:8px}
-.tool{white-space:nowrap;border:1px solid #303647;background:#11151e;color:#dce0e9;border-radius:9px;padding:7px 10px;cursor:pointer}
-.box{display:flex;gap:8px;border:1px solid #363c4d;background:#11151e;border-radius:18px;padding:7px}
-textarea{flex:1;min-height:48px;max-height:170px;resize:none;border:0;outline:0;background:transparent;color:#fff;padding:12px;font-size:16px}
-.send{width:48px;border:0;border-radius:14px;background:#7650e8;color:#fff;font-size:21px;cursor:pointer}
-.send:disabled{opacity:.5}
-.hint{text-align:center;color:#747d90;font-size:11px;padding-top:7px}
-.panel{position:fixed;right:-340px;top:0;bottom:0;width:330px;background:#11151e;border-left:1px solid #303647;padding:18px;z-index:40;transition:.2s}
-.panel.open{right:0}
-.panel h3{margin-top:0}
-.close{float:right;background:none;border:0;color:#fff;font-size:25px;cursor:pointer}
-.panel label{display:block;color:#aeb5c5;font-size:13px;margin:14px 0 5px}
-.panel select{width:100%;padding:10px;border-radius:9px;background:#0b0e14;color:#fff;border:1px solid #343a4b}
-.overlay{display:none}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#080b12;
+ color:#fff;
+}
+button{
+ border:0;
+ border-radius:12px;
+ padding:13px 16px;
+ font-weight:700;
+ font-size:15px;
+ cursor:pointer;
+}
+.app{max-width:650px;margin:auto;min-height:100vh;background:#0e1320}
+header{
+ padding:18px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ border-bottom:1px solid #252c3d;
+ position:sticky;
+ top:0;
+ background:#0e1320;
+ z-index:10;
+}
+.logo{font-size:22px;font-weight:900}
+.level{color:#9da8bd;font-size:13px}
 
-@media(max-width:700px){
-.side{position:fixed;z-index:30;left:-290px;top:0;bottom:0;transition:.2s}
-.side.open{left:0}
-.menu{display:block}
-.overlay.show{display:block;position:fixed;inset:0;background:#0008;z-index:20}
-.bubble{max-width:90%}
-.chat{padding:14px 10px}
-.panel{width:90vw}
+.stats{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+ padding:14px;
+}
+.stat{
+ background:#171e2d;
+ border:1px solid #273149;
+ padding:15px;
+ border-radius:16px;
+}
+.stat small{color:#8f9ab0}
+.stat b{display:block;font-size:21px;margin-top:5px}
+
+main{padding:0 14px 100px}
+.card{
+ background:#151c2b;
+ border:1px solid #273149;
+ border-radius:18px;
+ padding:18px;
+ margin-bottom:14px;
+}
+h2,h3{margin-top:0}
+.shop{
+ min-height:190px;
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ background:linear-gradient(145deg,#1b2437,#111827);
+}
+.shopIcon{font-size:65px}
+.shopName{font-size:22px;font-weight:900;margin:8px}
+
+.progress{
+ height:10px;
+ background:#252d40;
+ border-radius:20px;
+ overflow:hidden;
+ margin:10px 0;
+}
+.progress div{
+ height:100%;
+ width:0%;
+ background:#7c4dff;
+ transition:.3s;
+}
+
+.actions{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+}
+.action{
+ background:#202a3e;
+ color:white;
+}
+.primary{background:#7c4dff;color:white}
+.green{background:#16a36b;color:white}
+.gold{background:#e5a719;color:#111}
+
+.row{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ padding:12px 0;
+ border-bottom:1px solid #242d40;
+}
+.row:last-child{border:0}
+.row small{display:block;color:#8f9ab0;margin-top:4px}
+
+.locked{opacity:.5}
+
+.log{
+ max-height:150px;
+ overflow:auto;
+ font-size:13px;
+ color:#aab4c7;
+}
+.log div{padding:6px 0}
+
+nav{
+ position:fixed;
+ bottom:0;
+ left:50%;
+ transform:translateX(-50%);
+ width:min(650px,100%);
+ background:#111827;
+ border-top:1px solid #293247;
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ padding:9px;
+ z-index:20;
+}
+nav button{
+ background:transparent;
+ color:#8995aa;
+ padding:8px 4px;
+}
+nav button.active{color:#9b75ff}
+.page{display:none}
+.page.active{display:block}
+
+.toast{
+ position:fixed;
+ top:75px;
+ left:50%;
+ transform:translateX(-50%);
+ background:#222b3d;
+ padding:12px 18px;
+ border-radius:12px;
+ display:none;
+ z-index:99;
+ box-shadow:0 8px 30px #0008;
+}
+
+@media(max-width:420px){
+ .actions{grid-template-columns:1fr}
+ .stat b{font-size:18px}
 }
 </style>
 </head>
@@ -59,665 +165,753 @@ textarea{flex:1;min-height:48px;max-height:170px;resize:none;border:0;outline:0;
 
 <div class="app">
 
-<div id="overlay" class="overlay" onclick="closeAll()"></div>
-
-<aside id="side" class="side">
-
-<div class="logo">✦ NEXORA AI</div>
-
-<button class="btn" onclick="newChat()">＋ New chat</button>
-
-<div id="history" class="history"></div>
-
-<button class="btn" onclick="clearHistory()">🗑 Clear history</button>
-
-<button class="btn" onclick="openSettings()">⚙ Settings</button>
-
-</aside>
-
-
-<main class="main">
-
-<header class="top">
-
-<button class="menu" onclick="toggleSide()">☰</button>
-
-<div class="title">Nexora AI</div>
-
-<div class="status" id="status">Ready</div>
-
-<button class="btn"
-style="width:auto;padding:7px 10px"
-onclick="openSettings()">⚙</button>
-
+<header>
+ <div class="logo">🏢 Nexora Tycoon</div>
+ <div class="level" id="levelText">Level 1</div>
 </header>
 
+<div class="toast" id="toast"></div>
 
-<section id="chat" class="chat"></section>
+<!-- HOME -->
+<section id="home" class="page active">
 
-
-<div class="composer">
-
-<div class="tools">
-
-<button class="tool" onclick="voice()">🎙 Voice</button>
-
-<button class="tool"
-onclick="document.getElementById('file').click()">
-📎 File
-</button>
-
-<button class="tool" onclick="setMode('web')">
-🌐 Web mode
-</button>
-
-<button class="tool" onclick="setMode('normal')">
-💬 Normal
-</button>
-
+<div class="stats">
+ <div class="stat">
+  <small>💰 Cash</small>
+  <b id="cash">₹10,000</b>
+ </div>
+ <div class="stat">
+  <small>📈 Income / sec</small>
+  <b id="income">₹5</b>
+ </div>
+ <div class="stat">
+  <small>👥 Customers</small>
+  <b id="customers">0</b>
+ </div>
+ <div class="stat">
+  <small>⭐ XP</small>
+  <b id="xp">0 / 100</b>
+ </div>
 </div>
 
-<input id="file"
-type="file"
-hidden
-onchange="fileSelected(this.files[0])">
-
-<div class="box">
-
-<textarea
-id="input"
-placeholder="Message Nexora AI..."
-rows="1"></textarea>
-
-<button
-id="send"
-class="send"
-onclick="send()">➤</button>
-
+<div class="card shop">
+ <div class="shopIcon">🏪</div>
+ <div class="shopName" id="businessName">Small Shop</div>
+ <div id="businessStatus">Open for business</div>
 </div>
 
-<div class="hint">
-Enter to send • Shift+Enter for new line
+<div class="card">
+ <h3>📊 Business Progress</h3>
+ <div class="progress"><div id="xpBar"></div></div>
+ <small id="progressText">0 / 100 XP</small>
 </div>
 
+<div class="card">
+ <h3>⚡ Quick Actions</h3>
+ <div class="actions">
+  <button class="primary" onclick="sellProduct()">📦 Sell Product</button>
+  <button class="green" onclick="advertise()">📢 Advertise</button>
+  <button class="gold" onclick="collectBonus()">🎁 Collect Bonus</button>
+  <button class="action" onclick="openPage('business')">🏢 Manage Business</button>
+ </div>
 </div>
 
-</main>
+<div class="card">
+ <h3>📰 Business Activity</h3>
+ <div class="log" id="log"></div>
 </div>
 
-
-<div id="settings" class="panel">
-
-<button class="close" onclick="closeAll()">×</button>
-
-<h3>Settings</h3>
-
-<label>Model</label>
-
-<select id="model">
-
-<option value="gpt-4.1-mini">
-GPT-4.1 mini
-</option>
-
-<option value="gpt-4.1">
-GPT-4.1
-</option>
-
-</select>
+</section>
 
 
-<label>Response style</label>
+<!-- BUSINESS -->
+<section id="business" class="page">
 
-<select id="style">
+<div class="card">
+ <h2>🏢 Business</h2>
+ <p style="color:#8f9ab0">Grow your company and increase passive income.</p>
 
-<option>Helpful and concise</option>
+ <div class="row">
+  <div>
+   🏪 Shop Level
+   <small id="shopLevel">Level 1</small>
+  </div>
+  <button class="primary" onclick="upgradeShop()">Upgrade<br>₹<span id="shopCost">2,500</span></button>
+ </div>
 
-<option>Detailed</option>
+ <div class="row">
+  <div>
+   👨‍💼 Employees
+   <small id="employeeInfo">0 employees</small>
+  </div>
+  <button class="green" onclick="hireEmployee()">Hire<br>₹<span id="employeeCost">5,000</span></button>
+ </div>
 
-<option>Creative</option>
-
-</select>
-
-<br><br>
-
-<button class="btn" onclick="saveSettings()">
-Save
-</button>
-
+ <div class="row">
+  <div>
+   🚚 Delivery Van
+   <small id="vanInfo">Not owned</small>
+  </div>
+  <button class="gold" onclick="buyVan()">Buy<br>₹<span id="vanCost">12,000</span></button>
+ </div>
 </div>
 
+<div class="card">
+ <h3>🛒 Next Business</h3>
+
+ <div class="row">
+  <div>
+   🏬 Supermarket
+   <small id="marketInfo">Unlock at Shop Level 5</small>
+  </div>
+  <button id="marketBtn" class="primary" onclick="unlockMarket()">₹50,000</button>
+ </div>
+</div>
+
+</section>
+
+
+<!-- UPGRADES -->
+<section id="upgrades" class="page">
+
+<div class="card">
+ <h2>🚀 Upgrades</h2>
+
+ <div class="row">
+  <div>
+   📦 Better Products
+   <small>+₹3 income/sec</small>
+  </div>
+  <button class="primary" onclick="buyUpgrade('product')">₹3,000</button>
+ </div>
+
+ <div class="row">
+  <div>
+   💻 Smart POS
+   <small>+₹7 income/sec</small>
+  </div>
+  <button class="primary" onclick="buyUpgrade('pos')">₹7,500</button>
+ </div>
+
+ <div class="row">
+  <div>
+   📣 Marketing
+   <small>+₹10 income/sec</small>
+  </div>
+  <button class="primary" onclick="buyUpgrade('marketing')">₹10,000</button>
+ </div>
+
+ <div class="row">
+  <div>
+   🏆 Premium Brand
+   <small>+₹25 income/sec</small>
+  </div>
+  <button class="primary" onclick="buyUpgrade('brand')">₹25,000</button>
+ </div>
+</div>
+
+<div class="card">
+ <h3>💡 Income Formula</h3>
+ <p style="color:#9da8bd">
+ Shop level + employees + upgrades + delivery = passive income.
+ </p>
+</div>
+
+</section>
+
+
+<!-- PROFILE -->
+<section id="profile" class="page">
+
+<div class="card">
+ <h2>👤 CEO Profile</h2>
+
+ <div class="row">
+  <div>🏆 Level</div>
+  <b id="profileLevel">1</b>
+ </div>
+
+ <div class="row">
+  <div>💰 Total Money Earned</div>
+  <b id="totalEarned">₹0</b>
+ </div>
+
+ <div class="row">
+  <div>📦 Products Sold</div>
+  <b id="productsSold">0</b>
+ </div>
+
+ <div class="row">
+  <div>👥 Customers Served</div>
+  <b id="customersServed">0</b>
+ </div>
+</div>
+
+<div class="card">
+ <h3>💾 Game Data</h3>
+
+ <div class="actions">
+  <button class="green" onclick="saveGame()">💾 Save</button>
+  <button class="action" onclick="loadGame()">📂 Load</button>
+  <button class="action" onclick="resetGame()">🔄 New Game</button>
+ </div>
+</div>
+
+<div class="card">
+ <h3>🏆 Goal</h3>
+ <p>Build a business worth <b>₹10 Crore</b>.</p>
+ <div class="progress">
+  <div id="wealthBar"></div>
+ </div>
+ <small id="wealthText">₹0 / ₹10 Crore</small>
+</div>
+
+</section>
+
+
+<nav>
+ <button class="active" onclick="openPage('home',this)">🏠<br>Home</button>
+ <button onclick="openPage('business',this)">🏢<br>Business</button>
+ <button onclick="openPage('upgrades',this)">🚀<br>Upgrade</button>
+ <button onclick="openPage('profile',this)">👤<br>Profile</button>
+</nav>
+
+</div>
 
 <script>
 
-const STORE="nexora_final_v1";
+/* =========================
+   GAME DATA
+========================= */
 
-let chats=
-JSON.parse(
-localStorage.getItem(STORE)||"[]"
-);
+let game = {
+ cash:10000,
+ xp:0,
+ level:1,
+ shopLevel:1,
+ employees:0,
+ van:false,
+ market:false,
 
-let current=null;
+ product:false,
+ pos:false,
+ marketing:false,
+ brand:false,
 
-let busy=false;
-
-let mode="normal";
-
-
-let settings=
-JSON.parse(
-localStorage.getItem("nexora_settings")||
-'{"model":"gpt-4.1-mini","style":"Helpful and concise"}'
-);
+ customers:0,
+ customersServed:0,
+ productsSold:0,
+ totalEarned:0
+};
 
 
-/* SAVE */
+/* =========================
+   UTILITIES
+========================= */
 
-function persist(){
+function money(n){
+ return "₹"+Math.floor(n).toLocaleString("en-IN");
+}
+
+function toast(text){
+ const t=document.getElementById("toast");
+ t.innerText=text;
+ t.style.display="block";
+
+ setTimeout(()=>{
+  t.style.display="none";
+ },1800);
+}
+
+function log(text){
+ const box=document.getElementById("log");
+ const d=document.createElement("div");
+ d.innerText="• "+text;
+ box.prepend(d);
+
+ while(box.children.length>20)
+  box.removeChild(box.lastChild);
+}
+
+
+/* =========================
+   PAGE SYSTEM
+========================= */
+
+function openPage(id,btn){
+
+ document.querySelectorAll(".page")
+ .forEach(x=>x.classList.remove("active"));
+
+ document.getElementById(id)
+ .classList.add("active");
+
+ if(btn){
+  document.querySelectorAll("nav button")
+  .forEach(x=>x.classList.remove("active"));
+
+  btn.classList.add("active");
+ }
+
+ updateUI();
+}
+
+
+/* =========================
+   INCOME
+========================= */
+
+function getIncome(){
+
+ let income=5;
+
+ income += (game.shopLevel-1)*5;
+ income += game.employees*12;
+
+ if(game.van) income+=25;
+ if(game.product) income+=3;
+ if(game.pos) income+=7;
+ if(game.marketing) income+=10;
+ if(game.brand) income+=25;
+ if(game.market) income+=100;
+
+ return income;
+}
+
+
+/* =========================
+   XP
+========================= */
+
+function addXP(amount){
+
+ game.xp+=amount;
+
+ while(game.xp>=100){
+
+  game.xp-=100;
+  game.level++;
+
+  toast("🎉 Level Up! Level "+game.level);
+  log("Reached Level "+game.level+"!");
+ }
+}
+
+
+/* =========================
+   SELL PRODUCT
+========================= */
+
+function sellProduct(){
+
+ const earn=20+(game.shopLevel*5);
+
+ game.cash+=earn;
+ game.totalEarned+=earn;
+ game.productsSold++;
+ game.customers++;
+ game.customersServed++;
+
+ addXP(5);
+
+ log("📦 Product sold for "+money(earn));
+ updateUI();
+}
+
+
+/* =========================
+   ADVERTISE
+========================= */
+
+function advertise(){
+
+ const cost=500;
+
+ if(game.cash<cost){
+  toast("❌ Not enough cash");
+  return;
+ }
+
+ game.cash-=cost;
+
+ const customers=20+game.shopLevel*5;
+
+ game.customers+=customers;
+ addXP(10);
+
+ toast("📢 "+customers+" new customers!");
+ log("📢 Advertising campaign brought "+customers+" customers.");
+
+ updateUI();
+}
+
+
+/* =========================
+   BONUS
+========================= */
+
+let lastBonus=0;
+
+function collectBonus(){
+
+ const now=Date.now();
+
+ if(now-lastBonus<30000){
+  toast("⏳ Bonus ready in a few seconds");
+  return;
+ }
+
+ lastBonus=now;
+
+ const amount=500+game.level*100;
+
+ game.cash+=amount;
+ game.totalEarned+=amount;
+
+ toast("🎁 Bonus "+money(amount)+"!");
+ log("🎁 Daily bonus collected.");
+
+ updateUI();
+}
+
+
+/* =========================
+   SHOP UPGRADE
+========================= */
+
+function upgradeShop(){
+
+ const cost=2500*game.shopLevel;
+
+ if(game.cash<cost){
+  toast("❌ Not enough cash");
+  return;
+ }
+
+ game.cash-=cost;
+ game.shopLevel++;
+
+ addXP(25);
+
+ toast("🏪 Shop upgraded!");
+ log("🏪 Shop upgraded to Level "+game.shopLevel);
+
+ updateUI();
+}
+
+
+/* =========================
+   EMPLOYEE
+========================= */
+
+function hireEmployee(){
+
+ const cost=5000+(game.employees*3000);
+
+ if(game.cash<cost){
+  toast("❌ Not enough cash");
+  return;
+ }
+
+ game.cash-=cost;
+ game.employees++;
+
+ addXP(20);
+
+ toast("👨‍💼 Employee hired!");
+ log("👨‍💼 New employee joined the company.");
+
+ updateUI();
+}
+
+
+/* =========================
+   VAN
+========================= */
+
+function buyVan(){
+
+ if(game.van){
+  toast("🚚 You already own a van");
+  return;
+ }
+
+ if(game.cash<12000){
+  toast("❌ Need ₹12,000");
+  return;
+ }
+
+ game.cash-=12000;
+ game.van=true;
+
+ addXP(50);
+
+ toast("🚚 Delivery van purchased!");
+ log("🚚 Delivery network started.");
+
+ updateUI();
+}
+
+
+/* =========================
+   MARKET
+========================= */
+
+function unlockMarket(){
+
+ if(game.market){
+  toast("🏬 Already unlocked");
+  return;
+ }
+
+ if(game.shopLevel<5){
+  toast("🔒 Reach Shop Level 5");
+  return;
+ }
+
+ if(game.cash<50000){
+  toast("❌ Need ₹50,000");
+  return;
+ }
+
+ game.cash-=50000;
+ game.market=true;
+
+ addXP(100);
+
+ toast("🏬 SUPERMARKET UNLOCKED!");
+ log("🏬 Your first supermarket opened!");
+
+ updateUI();
+}
+
+
+/* =========================
+   UPGRADES
+========================= */
+
+function buyUpgrade(type){
+
+ let cost=0;
+ let name="";
+
+ if(type==="product"){
+  cost=3000;
+  name="Better Products";
+ }
+
+ if(type==="pos"){
+  cost=7500;
+  name="Smart POS";
+ }
+
+ if(type==="marketing"){
+  cost=10000;
+  name="Marketing";
+ }
+
+ if(type==="brand"){
+  cost=25000;
+  name="Premium Brand";
+ }
+
+ if(game[type]){
+  toast("✅ Already purchased");
+  return;
+ }
+
+ if(game.cash<cost){
+  toast("❌ Not enough cash");
+  return;
+ }
+
+ game.cash-=cost;
+ game[type]=true;
+
+ addXP(40);
+
+ toast("🚀 "+name+" purchased!");
+ log("🚀 Upgrade purchased: "+name);
+
+ updateUI();
+}
+
+
+/* =========================
+   PASSIVE INCOME
+========================= */
+
+setInterval(()=>{
+
+ const income=getIncome();
+
+ game.cash+=income;
+ game.totalEarned+=income;
+
+ if(Math.random()<0.25){
+
+  const c=1+Math.floor(Math.random()*4);
+
+  game.customers+=c;
+  game.customersServed+=c;
+ }
+
+ updateUI();
+
+},1000);
+
+
+/* =========================
+   UI
+========================= */
+
+function updateUI(){
+
+ const income=getIncome();
+
+ document.getElementById("cash").innerText=money(game.cash);
+ document.getElementById("income").innerText=money(income);
+ document.getElementById("customers").innerText=game.customers;
+
+ document.getElementById("xp").innerText=
+ game.xp+" / 100";
+
+ document.getElementById("xpBar").style.width=
+ Math.min(100,game.xp)+"%";
+
+ document.getElementById("progressText").innerText=
+ game.xp+" / 100 XP";
+
+ document.getElementById("levelText").innerText=
+ "Level "+game.level;
+
+ document.getElementById("profileLevel").innerText=
+ game.level;
+
+ document.getElementById("totalEarned").innerText=
+ money(game.totalEarned);
+
+ document.getElementById("productsSold").innerText=
+ game.productsSold;
+
+ document.getElementById("customersServed").innerText=
+ game.customersServed;
+
+ document.getElementById("shopLevel").innerText=
+ "Level "+game.shopLevel;
+
+ document.getElementById("shopCost").innerText=
+ (2500*game.shopLevel).toLocaleString("en-IN");
+
+ document.getElementById("employeeInfo").innerText=
+ game.employees+" employee"+(game.employees===1?"":"s");
+
+ document.getElementById("employeeCost").innerText=
+ (5000+game.employees*3000).toLocaleString("en-IN");
+
+ document.getElementById("vanInfo").innerText=
+ game.van ? "Owned • +₹25/sec" : "Not owned";
+
+ document.getElementById("businessName").innerText=
+ game.market ? "Nexora Supermarket" :
+ game.shopLevel>=5 ? "Mega Shop" :
+ "Small Shop";
+
+ document.getElementById("businessStatus").innerText=
+ "₹"+income.toLocaleString("en-IN")+" / sec passive income";
+
+ document.getElementById("marketInfo").innerText=
+ game.market ?
+ "Unlocked • +₹100/sec" :
+ "Unlock at Shop Level 5";
+
+ document.getElementById("marketBtn").innerText=
+ game.market ? "OWNED" : "₹50,000";
+
+ const wealth=Math.min(game.totalEarned,10000000);
+
+ document.getElementById("wealthBar").style.width=
+ (wealth/10000000*100)+"%";
+
+ document.getElementById("wealthText").innerText=
+ money(wealth)+" / ₹1 Crore";
+}
+
+
+/* =========================
+   SAVE / LOAD
+========================= */
+
+function saveGame(){
 
  localStorage.setItem(
-  STORE,
-  JSON.stringify(chats)
+  "nexora_tycoon_save",
+  JSON.stringify(game)
  );
 
- renderHistory();
-
+ toast("💾 Game Saved!");
 }
 
+function loadGame(){
 
-/* NEW CHAT */
+ const data=localStorage.getItem("nexora_tycoon_save");
 
-function newChat(){
-
- current={
-  id:Date.now(),
-  title:"New chat",
-  messages:[]
- };
-
- chats.unshift(current);
-
- persist();
-
- render();
-
- closeAll();
-
-}
-
-
-/* HISTORY */
-
-function renderHistory(){
-
- const h=
- document.getElementById("history");
-
- h.innerHTML="";
-
- chats.forEach(c=>{
-
-  const b=
-  document.createElement("button");
-
-  b.textContent=
-  "💬 "+c.title;
-
-  b.onclick=()=>{
-
-   current=c;
-
-   render();
-
-   closeAll();
-
-  };
-
-  h.appendChild(b);
-
- });
-
-}
-
-
-/* CHAT */
-
-function render(){
-
- const box=
- document.getElementById("chat");
-
- box.innerHTML="";
-
-
- if(
-  !current ||
-  !current.messages.length
- ){
-
-  box.innerHTML=`
-
-  <div class="msg">
-
-   <div class="avatar">N</div>
-
-   <div class="bubble">
-
-   Hi! I’m Nexora AI 👋
-
-   \n\n
-
-   Ask me anything.
-
-   </div>
-
-  </div>
-
-  `;
-
+ if(!data){
+  toast("❌ No save found");
   return;
-
  }
-
-
- current.messages.forEach(m=>{
-
-  const row=
-  document.createElement("div");
-
-  row.className=
-  "msg "+
-  (m.role==="user"?"user":"");
-
-
-  row.innerHTML=`
-
-  <div class="avatar">
-  ${m.role==="user"?"You":"N"}
-  </div>
-
-  <div class="bubble"></div>
-
-  `;
-
-
-  row.querySelector(".bubble")
-  .textContent=m.content;
-
-
-  box.appendChild(row);
-
- });
-
-
- box.scrollTop=
- box.scrollHeight;
-
-}
-
-
-/* MESSAGE */
-
-function add(role,content){
-
- if(!current){
-
-  newChat();
-
- }
-
- current.messages.push({
-
-  role:role,
-
-  content:content
-
- });
-
-
- if(
-  role==="user" &&
-  current.title==="New chat"
- ){
-
-  current.title=
-  content.slice(0,32);
-
- }
-
- persist();
-
- render();
-
-}
-
-
-/* REAL AI */
-
-async function send(){
-
- if(busy)return;
-
- const input=
- document.getElementById("input");
-
- const text=
- input.value.trim();
-
- if(!text)return;
-
-
- add("user",text);
-
- input.value="";
-
- busy=true;
-
- document.getElementById("send")
- .disabled=true;
-
- document.getElementById("status")
- .textContent="Thinking…";
-
 
  try{
-
-  const response=
-  await fetch(
-   "/api/chat",
-   {
-    method:"POST",
-
-    headers:{
-     "Content-Type":
-     "application/json"
-    },
-
-    body:JSON.stringify({
-
-     messages:
-     current.messages,
-
-     model:
-     settings.model,
-
-     style:
-     settings.style,
-
-     mode:mode
-
-    })
-
-   }
-  );
-
-
-  const data=
-  await response.json();
-
-
-  if(!response.ok){
-
-   throw new Error(
-    data.error ||
-    "AI request failed"
-   );
-
-  }
-
-
-  add(
-   "assistant",
-   data.reply
-  );
-
-
- }catch(error){
-
-  add(
-   "assistant",
-   "⚠️ "+error.message
-  );
-
+  game=JSON.parse(data);
+  toast("📂 Game Loaded!");
+  log("📂 Previous game loaded.");
+  updateUI();
+ }catch(e){
+  toast("❌ Save file corrupted");
  }
-
-
- busy=false;
-
- document.getElementById("send")
- .disabled=false;
-
- document.getElementById("status")
- .textContent=
- mode==="web"
- ?"Web mode"
- :"Ready";
-
 }
 
+function resetGame(){
 
-/* ENTER */
-
-document
-.getElementById("input")
-.addEventListener(
- "keydown",
- function(e){
-
-  if(
-   e.key==="Enter" &&
-   !e.shiftKey
-  ){
-
-   e.preventDefault();
-
-   send();
-
-  }
-
- }
-);
-
-
-/* SIDEBAR */
-
-function toggleSide(){
-
- document
- .getElementById("side")
- .classList
- .toggle("open");
-
- document
- .getElementById("overlay")
- .classList
- .toggle("show");
-
-}
-
-
-/* SETTINGS */
-
-function openSettings(){
-
- document
- .getElementById("settings")
- .classList
- .add("open");
-
- document
- .getElementById("overlay")
- .classList
- .add("show");
-
- document.getElementById("model")
- .value=settings.model;
-
- document.getElementById("style")
- .value=settings.style;
-
-}
-
-
-function saveSettings(){
-
- settings={
-
-  model:
-  document.getElementById("model").value,
-
-  style:
-  document.getElementById("style").value
-
- };
-
- localStorage.setItem(
-  "nexora_settings",
-  JSON.stringify(settings)
- );
-
- closeAll();
-
-}
-
-
-/* CLOSE */
-
-function closeAll(){
-
- document
- .getElementById("side")
- .classList
- .remove("open");
-
- document
- .getElementById("settings")
- .classList
- .remove("open");
-
- document
- .getElementById("overlay")
- .classList
- .remove("show");
-
-}
-
-
-/* DELETE */
-
-function clearHistory(){
-
- if(
-  confirm("Delete all chats?")
- ){
-
-  chats=[];
-
-  current=null;
-
-  persist();
-
-  render();
-
- }
-
-}
-
-
-/* WEB MODE */
-
-function setMode(value){
-
- mode=value;
-
- document
- .getElementById("status")
- .textContent=
- value==="web"
- ?"Web mode"
- :"Ready";
-
-}
-
-
-/* FILE */
-
-function fileSelected(file){
-
- if(!file)return;
-
- add(
-  "user",
-  "📎 File selected: "+
-  file.name
- );
-
-}
-
-
-/* VOICE */
-
-function voice(){
-
- const Recognition=
- window.SpeechRecognition ||
- window.webkitSpeechRecognition;
-
-
- if(!Recognition){
-
-  alert(
-   "Voice recognition supported nahi hai."
-  );
-
+ if(!confirm("New game start kare? Current progress delete ho jayega.")){
   return;
-
  }
 
+ localStorage.removeItem("nexora_tycoon_save");
 
- const r=
- new Recognition();
+ game={
+  cash:10000,
+  xp:0,
+  level:1,
+  shopLevel:1,
+  employees:0,
+  van:false,
+  market:false,
 
- r.lang="en-IN";
+  product:false,
+  pos:false,
+  marketing:false,
+  brand:false,
 
- r.onstart=()=>{
-
-  document
-  .getElementById("status")
-  .textContent="Listening…";
-
+  customers:0,
+  customersServed:0,
+  productsSold:0,
+  totalEarned:0
  };
 
-
- r.onresult=e=>{
-
-  document
-  .getElementById("input")
-  .value=
-  e.results[0][0].transcript;
-
- };
-
-
- r.onend=()=>{
-
-  document
-  .getElementById("status")
-  .textContent="Ready";
-
- };
-
-
- r.start();
-
+ log("🆕 New company created.");
+ updateUI();
 }
 
 
-/* START */
+/* =========================
+   START
+========================= */
 
-renderHistory();
-
-newChat();
+updateUI();
+log("🏢 Welcome, CEO!");
+log("💰 You received ₹10,000 starting capital.");
+log("📦 Sell products to grow your company.");
 
 </script>
 
