@@ -110,12 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const button = document.createElement('button');
-  button.textContent = 'Send 🚀';
-  button.className = 'active';
-  button.style.marginTop = '8px';
-  button.onclick = sendChat;
-
-  chatPanel.appendChild(button);
+  <button class="active" onclick="sendChat()">Send</button>
 });
   </script>
